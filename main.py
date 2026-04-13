@@ -13,7 +13,7 @@ def get_cute_dog_image(breed_keyword):
     search_query = f"{breed_keyword},puppy,cute"
     return f"https://loremflickr.com/800/600/{search_query}?lock={ts}"
 
-st.title("💖 형님을 위한 맞춤형 강아지 갤러리")
+st.title("RANDOG : 랜덤 강아지 사진 사이트")
 
 # --- 사이드바: 견종 선택 ---
 st.sidebar.header("🐾 어떤 강아지를 볼까요?")
