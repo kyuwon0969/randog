@@ -48,7 +48,7 @@ st.subheader(f"지금 보고 계신 견종: {selected_name}")
 
 if st.session_state.current_img_data:
     # 1. 화면에 이미지 표시 (저장된 데이터를 그대로 사용)
-    st.image(st.session_state.current_img_data, use_container_width=True, caption=f"이 {selected_name} 정말 귀엽죠?")
+    st.image(st.session_state.current_img_data, use_container_width=True, caption=f"정말 사랑스러운 {selected_name} 아닙니까?")
     
     col1, col2 = st.columns(2)
     
