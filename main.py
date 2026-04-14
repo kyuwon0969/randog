@@ -4,14 +4,21 @@ from io import BytesIO
 import time
 
 # 페이지 설정
-st.set_page_config(page_title="견종별 귀요미 모음", page_icon="🐶")
+st.set_page_config(page_title="RANDOG : 랜덤 강아지 사진", page_icon="🐶")
 
-def get_cute_dog_image(breed_keyword):
-    """선택된 견종 키워드를 사용하여 고퀄리티 이미지를 가져옵니다."""
+def get_cute_dog_data(breed_keyword):
+    """이미지 URL과 실제 데이터(바이너리)를 한꺼번에 가져옵니다."""
     ts = int(time.time())
-    # 검색어에 'cute', 'puppy'를 조합해서 더 귀여운 사진이 나올 확률을 높입니다.
     search_query = f"{breed_keyword},puppy,cute"
-    return f"https://loremflickr.com/800/600/{search_query}?lock={ts}"
+    url = f"https://loremflickr.com/800/600/{search_query}?lock={ts}"
+    
+    try:
+        response = requests.get(url)
+        if response.status_code == 200:
+            return response.content  # 이미지 바이너리 데이터 자체를 리턴
+    except:
+        return None
+    return None
 
 st.title("RANDOG : 랜덤 강아지 사진 사이트")
 
@@ -27,47 +34,40 @@ breed_options = {
     "랜덤 모두보기": "dog"
 }
 
-# 사용자 선택 (기본값은 포메라니안으로 해뒀습니다, 형님!)
 selected_name = st.sidebar.selectbox("견종을 선택하세요", list(breed_options.keys()), index=0)
 selected_breed = breed_options[selected_name]
 
-# 견종이 바뀌면 사진도 새로 가져오기 위해 세션 상태 관리
-if 'current_breed' not in st.session_state:
-    st.session_state.current_breed = selected_breed
-    st.session_state.dog_url = get_cute_dog_image(selected_breed)
-
-# 만약 사이드바에서 견종을 바꾸면 즉시 업데이트
-if st.session_state.current_breed != selected_breed:
-    st.session_state.current_breed = selected_breed
-    st.session_state.dog_url = get_cute_dog_image(selected_breed)
+# --- 사진 데이터 관리 (세션 상태) ---
+# 핵심: 이미지 바이너리 데이터를 세션에 저장해서 재사용합니다.
+if 'current_img_data' not in st.session_state or st.session_state.get('last_breed') != selected_breed:
+    st.session_state.last_breed = selected_breed
+    st.session_state.current_img_data = get_cute_dog_data(selected_breed)
 
 # --- 메인 화면 ---
 st.subheader(f"지금 보고 계신 견종: {selected_name}")
 
-if st.session_state.dog_url:
-    st.image(st.session_state.dog_url, use_container_width=True, caption=f"정말 사랑스러운 {selected_name} 아닙니까?")
+if st.session_state.current_img_data:
+    # 1. 화면에 이미지 표시 (저장된 데이터를 그대로 사용)
+    st.image(st.session_state.current_img_data, use_container_width=True, caption=f"이 {selected_name} 정말 귀엽죠?")
     
     col1, col2 = st.columns(2)
     
     with col1:
+        # 새로운 사진 불러오기
         if st.button("🔄 다른 사진 보기"):
-            st.session_state.dog_url = get_cute_dog_image(selected_breed)
+            st.session_state.current_img_data = get_cute_dog_data(selected_breed)
             st.rerun()
             
     with col2:
-        try:
-            # 다운로드 버튼
-            img_data = requests.get(st.session_state.dog_url).content
-            st.download_button(
-                label="💾 이 사진 저장",
-                data=img_data,
-                file_name=f"{selected_breed}_{int(time.time())}.jpg",
-                mime="image/jpeg"
-            )
-        except:
-            st.info("사진 로딩 중...")
+        # 2. 다운로드 버튼 (이미 세션에 저장된 데이터를 그대로 다운로드)
+        st.download_button(
+            label="💾 이 사진 그대로 저장",
+            data=st.session_state.current_img_data,
+            file_name=f"{selected_breed}_{int(time.time())}.jpg",
+            mime="image/jpeg"
+        )
 else:
-    st.error("사진을 가져오지 못했습니다.")
+    st.error("사진을 가져오지 못했습니다. 새로고침을 눌러주세요.")
 
 st.divider()
 st.caption(f"본 서비스는 {selected_name}의 고퀄리티 무료 이미지를 실시간으로 제공합니다.")
